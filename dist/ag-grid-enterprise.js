@@ -15726,14 +15726,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	    RowNode.prototype.setSelectedInitialValue = function (selected) {
 	        this.selected = selected;
 	    };
-	    RowNode.prototype.setSelected = function (newValue, clearSelection, tailingNodeInSequence) {
+	    RowNode.prototype.setSelected = function (newValue, clearSelection, tailingNodeInSequence, fireSelectionChangedEvent) {
 	        if (clearSelection === void 0) { clearSelection = false; }
 	        if (tailingNodeInSequence === void 0) { tailingNodeInSequence = false; }
+	        if (fireSelectionChangedEvent === void 0) { fireSelectionChangedEvent = true; }
 	        this.setSelectedParams({
 	            newValue: newValue,
 	            clearSelection: clearSelection,
 	            tailingNodeInSequence: tailingNodeInSequence,
-	            rangeSelect: false
+	            rangeSelect: false,
+	            fireSelectionChangedEvent: fireSelectionChangedEvent
 	        });
 	    };
 	    RowNode.prototype.isRowPinned = function () {
@@ -15748,6 +15750,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var rangeSelect = params.rangeSelect === true;
 	        // groupSelectsFiltered only makes sense when group selects children
 	        var groupSelectsFiltered = groupSelectsChildren && (params.groupSelectsFiltered === true);
+	        var fireSelectionChangedEvent = params.fireSelectionChangedEvent === true;
 	        if (this.id === undefined) {
 	            console.warn('ag-Grid: cannot select node until id for node is known');
 	            return 0;
@@ -15810,12 +15813,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	                // fire events
 	                // this is the very end of the 'action node', so we are finished all the updates,
 	                // include any parent / child changes that this method caused
-	                var event_1 = {
-	                    type: events_1.Events.EVENT_SELECTION_CHANGED,
-	                    api: this.gridApi,
-	                    columnApi: this.columnApi
-	                };
-	                this.mainEventService.dispatchEvent(event_1);
+	                if (fireSelectionChangedEvent) {
+	                    var event_1 = {
+	                        type: events_1.Events.EVENT_SELECTION_CHANGED,
+	                        api: this.gridApi,
+	                        columnApi: this.columnApi
+	                    };
+	                    this.mainEventService.dispatchEvent(event_1);
+	                }
 	            }
 	            // so if user next does shift-select, we know where to start the selection from
 	            if (newValue) {
@@ -16952,9 +16957,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return _super.call(this, "<span class=\"ag-selection-checkbox\"/>") || this;
 	    }
 	    CheckboxSelectionComponent.prototype.createAndAddIcons = function () {
-	        this.eCheckedIcon = utils_1.Utils.createIconNoSpan('checkboxChecked', this.gridOptionsWrapper, this.column);
-	        this.eUncheckedIcon = utils_1.Utils.createIconNoSpan('checkboxUnchecked', this.gridOptionsWrapper, this.column);
-	        this.eIndeterminateIcon = utils_1.Utils.createIconNoSpan('checkboxIndeterminate', this.gridOptionsWrapper, this.column);
+	        if (this.readOnly) {
+	            this.eCheckedIcon = utils_1.Utils.createIconNoSpan("checkboxCheckedReadOnly", this.gridOptionsWrapper, this.column);
+	            this.eUncheckedIcon = utils_1.Utils.createIconNoSpan("checkboxUncheckedReadOnly", this.gridOptionsWrapper, this.column);
+	            this.eIndeterminateIcon = utils_1.Utils.createIconNoSpan("checkboxIndeterminateReadOnly", this.gridOptionsWrapper, this.column);
+	        }
+	        else {
+	            this.eCheckedIcon = utils_1.Utils.createIconNoSpan("checkboxChecked", this.gridOptionsWrapper, this.column);
+	            this.eUncheckedIcon = utils_1.Utils.createIconNoSpan("checkboxUnchecked", this.gridOptionsWrapper, this.column);
+	            this.eIndeterminateIcon = utils_1.Utils.createIconNoSpan("checkboxIndeterminate", this.gridOptionsWrapper, this.column);
+	        }
 	        var element = this.getGui();
 	        element.appendChild(this.eCheckedIcon);
 	        element.appendChild(this.eUncheckedIcon);
@@ -16975,24 +16987,32 @@ return /******/ (function(modules) { // webpackBootstrap
 	        utils_1.Utils.setVisible(this.eIndeterminateIcon, typeof state !== 'boolean');
 	    };
 	    CheckboxSelectionComponent.prototype.onCheckedClicked = function () {
-	        var groupSelectsFiltered = this.gridOptionsWrapper.isGroupSelectsFiltered();
-	        var updatedCount = this.rowNode.setSelectedParams({ newValue: false, groupSelectsFiltered: groupSelectsFiltered });
-	        return updatedCount;
+	        if (!this.readOnly) {
+	            var groupSelectsFiltered = this.gridOptionsWrapper.isGroupSelectsFiltered();
+	            var updatedCount = this.rowNode.setSelectedParams({ newValue: false, groupSelectsFiltered: groupSelectsFiltered });
+	            return updatedCount;
+	        }
+	        return 0;
 	    };
 	    CheckboxSelectionComponent.prototype.onUncheckedClicked = function (event) {
-	        var groupSelectsFiltered = this.gridOptionsWrapper.isGroupSelectsFiltered();
-	        var updatedCount = this.rowNode.setSelectedParams({ newValue: true, rangeSelect: event.shiftKey, groupSelectsFiltered: groupSelectsFiltered });
-	        return updatedCount;
+	        if (!this.readOnly) {
+	            var groupSelectsFiltered = this.gridOptionsWrapper.isGroupSelectsFiltered();
+	            var updatedCount = this.rowNode.setSelectedParams({ newValue: true, rangeSelect: event.shiftKey, groupSelectsFiltered: groupSelectsFiltered });
+	            return updatedCount;
+	        }
 	    };
 	    CheckboxSelectionComponent.prototype.onIndeterminateClicked = function (event) {
-	        var result = this.onUncheckedClicked(event);
-	        if (result === 0) {
-	            this.onCheckedClicked();
+	        if (!this.readOnly) {
+	            var result = this.onUncheckedClicked(event);
+	            if (result === 0) {
+	                this.onCheckedClicked();
+	            }
 	        }
 	    };
 	    CheckboxSelectionComponent.prototype.init = function (params) {
 	        this.rowNode = params.rowNode;
 	        this.column = params.column;
+	        this.readOnly = params.readOnly;
 	        this.createAndAddIcons();
 	        this.onSelectionChanged();
 	        // we don't want the row clicked event to fire when selecting the checkbox, otherwise the row
@@ -24292,6 +24312,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	            return paramsCheckbox === true;
 	        }
 	    };
+	    GroupCellRenderer.prototype.isReadOnly = function () {
+	        var paramsReadOnly = this.params.readOnly;
+	        if (typeof paramsReadOnly === "function") {
+	            return paramsReadOnly();
+	        }
+	        else {
+	            return paramsReadOnly === true;
+	        }
+	    };
 	    GroupCellRenderer.prototype.addCheckboxIfNeeded = function () {
 	        var rowNode = this.displayedGroup;
 	        var checkboxNeeded = this.isUserWantsSelected()
@@ -24301,7 +24330,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (checkboxNeeded) {
 	            var cbSelectionComponent_1 = new checkboxSelectionComponent_1.CheckboxSelectionComponent();
 	            this.context.wireBean(cbSelectionComponent_1);
-	            cbSelectionComponent_1.init({ rowNode: rowNode, column: this.params.column });
+	            cbSelectionComponent_1.init({ rowNode: rowNode, column: this.params.column, readOnly: this.isReadOnly() });
 	            this.eCheckbox.appendChild(cbSelectionComponent_1.getGui());
 	            this.addDestroyFunc(function () { return cbSelectionComponent_1.destroy(); });
 	        }
