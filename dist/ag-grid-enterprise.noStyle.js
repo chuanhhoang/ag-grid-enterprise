@@ -41784,12 +41784,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        };
 	    };
 	    LicenseManager.outputMessage = function (header, message) {
-	        console.error('****************************************************************************************************************');
-	        console.error('*************************************** ag-Grid Enterprise License *********************************************');
-	        console.error(header);
-	        console.error(message);
-	        console.error('****************************************************************************************************************');
-	        console.error('****************************************************************************************************************');
 	    };
 	    LicenseManager.formatDate = function (date) {
 	        var monthNames = [

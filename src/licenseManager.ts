@@ -71,12 +71,6 @@ export class LicenseManager {
     }
 
     private static outputMessage(header:string, message:string) {
-        console.error('****************************************************************************************************************');
-        console.error('*************************************** ag-Grid Enterprise License *********************************************');
-        console.error(header);
-        console.error(message);
-        console.error('****************************************************************************************************************');
-        console.error('****************************************************************************************************************');
     }
 
     private static formatDate(date:any):string {
